@@ -1,5 +1,7 @@
 ﻿Imports Cadastro.Classes
 Imports Cadastro
+Imports Cadastro.Classes.bancodedados
+
 
 Public Class Form1
 
@@ -25,7 +27,7 @@ Public Class Form1
         CampoTabela.Columns.Add("Data de Nasc.", 100, HorizontalAlignment.Center)
         CampoTabela.Columns.Add("E-mail", 150, HorizontalAlignment.Center)
         CampoTabela.Columns.Add("Estado Civil", 100, HorizontalAlignment.Center)
-        CampoTabela.Columns.Add("Telefone", 80, HorizontalAlignment.Center)
+        CampoTabela.Columns.Add("Telefone", 150, HorizontalAlignment.Center)
 
 
 
@@ -39,52 +41,66 @@ Public Class Form1
     Dim ListaDePessoas As New List(Of Pessoa)
     Dim pessoaPraRemover As Pessoa
     Dim atualizar As New Atualizar
+    Dim estado As String
 
 #End Region
 
+    Private Function EstadoCivil() As String
 
-
-    Private Sub BotaoSalvar_Click(sender As Object, e As EventArgs) Handles BotaoSalvar.Click
-        Dim estadocivil As String
         If RadioCasado.Checked Then
-            estadocivil = "Casado(a)"
+            estado = "Casado(a)"
+
         Else
-            estadocivil = "Solteiro(a)"
+            estado = "Solteiro(a)"
         End If
+        Return estado
+    End Function
+
+    Private Sub BotaoSalvar_Click(sender As Object, e As EventArgs)
+        'Dim estadocivil As String
+
+        EstadoCivil()
 
         If ValidarCampos() Then
-            Dim pessoa As New Pessoa(CampoNome.Text, CampoSobrenome.Text, CampoEndereco.Text, CampoSexo.Text, CampoData.Text, CampoEmail.Text, CampoTelefone.Text, estadocivil, contador)
+            Dim pessoa As New Pessoa(CampoNome.Text, CampoSobrenome.Text, CampoEndereco.Text, CampoSexo.Text, CampoData.Text, CampoEmail.Text, CampoTelefone.Text, estado, contador)
             contador += 1
             ListaDePessoas.Add(pessoa)
 
             ListarPessoas(ListaDePessoas)
         End If
-
-
-
     End Sub
+
+    Public Function Buscar(coluna As String, informacao As String)
+
+        Try
+            Dim Comando As String = $"SELECT * FROM pessoa WHERE {coluna} = '{informacao}';"
+            Dim Dt As New DataTable
+            Dim BancoDeDados As New bancodedados()
+            Dim Resultado = BancoDeDados.Consulta(Comando, Dt)
+            BancoDeDados.Close()
+            If Dt.Rows(0)(coluna) IsNot Nothing Then
+                Return Dt
+            End If
+
+
+        Catch ex As Exception
+            MsgBox($"{coluna} não encontrado.")
+            Return Nothing
+
+        End Try
+
+
+    End Function
+
+
 
     Sub ListarPessoas(vpessoa As List(Of Pessoa))
         CampoTabela.Items.Clear()
         atualizar.CampoAtualizarPessoa.Items.Clear()
+        Dim TabelaDoBanco As DataTable
+        TabelaDoBanco = BuscarNoBanco()
 
-        For i As Integer = 0 To ListaDePessoas.Count - 1
-            Dim Linha As New ListViewItem
-            Linha.Name = vpessoa(i).Id
-            Linha.Text = vpessoa(i).Id
-            Linha.SubItems.Add($"{ListaDePessoas(i).Nome} {ListaDePessoas(i).Sobrenome}")
-            Linha.SubItems.Add(ListaDePessoas(i).Endereco)
-            Linha.SubItems.Add(ListaDePessoas(i).Sexo)
-            Linha.SubItems.Add(ListaDePessoas(i).Data)
-            Linha.SubItems.Add(ListaDePessoas(i).Email)
-            Linha.SubItems.Add(ListaDePessoas(i).EstadoCivil)
-            Linha.SubItems.Add(ListaDePessoas(i).Telefone.ToString)
-            CampoTabela.Items.Add(Linha)
 
-            atualizar.CampoAtualizarPessoa.Items.Add(ListaDePessoas(i).Nome)
-            ApagarCampos()
-
-        Next
     End Sub
 
     Sub ApagarCampos()
@@ -106,55 +122,67 @@ Public Class Form1
 
     Private Sub BotaoRemoverId_Click(sender As Object, e As EventArgs) Handles BotaoRemoverId.Click
         Dim confirmacao As Integer
-        If ListaDePessoas.Count <> 0 Then
-            If CampoRemoverId.Text = Nothing Then
-                MsgBox("Preencha o campo com o Id.")
-            Else
-                Try
-                    For Each pessoa As Pessoa In ListaDePessoas
-                        If pessoa.Id = Val(CampoRemoverId.Text) Then
-                            pessoaPraRemover = pessoa
-                        End If
-                    Next
-                    confirmacao = MsgBox($"Tem certeza que deseja remover {pessoaPraRemover.Nome}?", MsgBoxStyle.YesNo, "Remover")
-                    If confirmacao = 6 Then
-                        ListaDePessoas.Remove(pessoaPraRemover)
-                        ListarPessoas(ListaDePessoas)
-                    End If
-                Catch ex As Exception
-                    MsgBox("Revise os campos")
-                End Try
+        Dim pessoapraremover As DataTable
+        If CampoRemoverId.Text = Nothing Then
+            MsgBox("Preencha o campo com o Id.")
+        Else
+
+            pessoapraremover = Buscar("id", CampoRemoverId.Text)
+            If pessoapraremover IsNot Nothing Then
+                confirmacao = MsgBox($"Tem certeza que deseja remover {pessoapraremover.Rows(0)("nome")}?", MsgBoxStyle.YesNo, "Remover")
+                If confirmacao = 6 Then
+                    Try
+                        Dim Comando As String = $“DELETE FROM pessoa WHERE id = {CampoRemoverId.Text}"
+                        Dim BancoDeDados As New bancodedados()
+                        BancoDeDados.Ordem(Comando)
+                        BancoDeDados.Close()
+                        MsgBox("Removido com Sucesso!")
+                        Consultar()
+                    Catch ex As Exception
+                        MsgBox(ex.Message)
+                    End Try
+                End If
+
             End If
 
-        End If
 
-        pessoaPraRemover = Nothing
+
+
+        End If
+        pessoapraremover = Nothing
+
     End Sub
 
     Private Sub BotaoRemoverNome_Click(sender As Object, e As EventArgs) Handles BotaoRemoverNome.Click
         Dim confirmacao As Integer
-        If ListaDePessoas.Count <> 0 Then
-            If CampoRemoverNome.Text = Nothing Then
-                MsgBox("Preencha o campo com o Nome.")
-            Else
-                Try
-                    For Each pessoa As Pessoa In ListaDePessoas
-                        If pessoa.Nome = CampoRemoverNome.Text Then
-                            pessoaPraRemover = pessoa
-                        End If
-                    Next
-                    confirmacao = MsgBox($"Tem certeza que deseja remover {pessoaPraRemover.Nome}?", MsgBoxStyle.YesNo, "Remover")
-                    If confirmacao = 6 Then
-                        ListaDePessoas.Remove(pessoaPraRemover)
-                        ListarPessoas(ListaDePessoas)
-                    End If
-                Catch ex As Exception
-                    MsgBox("Revise os campos")
-                End Try
-            End If
-        End If
+        Dim pessoapraremover As DataTable
+        If CampoRemoverNome.Text = Nothing Then
+            MsgBox("Preencha o campo com o Nome.")
+        Else
 
-        pessoaPraRemover = Nothing
+            pessoapraremover = Buscar("nome", CampoRemoverNome.Text)
+            If pessoapraremover IsNot Nothing Then
+                confirmacao = MsgBox($"Tem certeza que deseja remover {pessoapraremover.Rows(0)("nome")}?", MsgBoxStyle.YesNo, "Remover")
+                If confirmacao = 6 Then
+                    Try
+                        Dim Comando As String = $“DELETE FROM pessoa WHERE nome = '{CampoRemoverNome.Text}'"
+                        Dim BancoDeDados As New bancodedados()
+                        BancoDeDados.Ordem(Comando)
+                        BancoDeDados.Close()
+                        MsgBox("Removido com Sucesso!")
+                        Consultar()
+                    Catch ex As Exception
+                        MsgBox(ex.Message)
+                    End Try
+                End If
+
+            End If
+
+
+
+
+        End If
+        pessoapraremover = Nothing
     End Sub
 
     Function ValidarCampos() As Boolean
@@ -170,14 +198,78 @@ Public Class Form1
         End If
     End Function
 
+
+
+    Function BuscarNoBanco() As DataTable
+        Try
+            Dim Comando As String = "SELECT * FROM pessoa;"
+            Dim Dt As New DataTable
+            Dim BancoDeDados As New bancodedados()
+            Dim Resultado = BancoDeDados.Consulta(Comando, Dt)
+            BancoDeDados.Close()
+            Return Dt
+        Catch ex As Exception
+            MsgBox(ex.Message)
+            Return Nothing
+
+        End Try
+
+    End Function
+
+    Sub Consultar()
+        CampoTabela.Items.Clear()
+        Dim TabelaDoBanco As DataTable
+        TabelaDoBanco = BuscarNoBanco()
+
+        For i As Integer = 0 To TabelaDoBanco.Rows.Count - 1
+            Dim Linha As New ListViewItem
+            Linha.Name = TabelaDoBanco.Rows(i)("id")
+            Linha.Text = TabelaDoBanco.Rows(i)("id")
+            Linha.SubItems.Add($"{TabelaDoBanco.Rows(i)("nome")} {TabelaDoBanco.Rows(i)("sobrenome")}")
+            Linha.SubItems.Add(TabelaDoBanco.Rows(i)("endereco"))
+            Linha.SubItems.Add(TabelaDoBanco.Rows(i)("sexo"))
+            Linha.SubItems.Add(TabelaDoBanco.Rows(i)("datadenascimento"))
+            Linha.SubItems.Add(TabelaDoBanco.Rows(i)("email"))
+            Linha.SubItems.Add(TabelaDoBanco.Rows(i)("estadocivil"))
+            Linha.SubItems.Add(TabelaDoBanco.Rows(i)("telefone"))
+            CampoTabela.Items.Add(Linha)
+
+
+            ApagarCampos()
+
+        Next
+    End Sub
+
     Private Sub BotaoAtualizarDados_Click(sender As Object, e As EventArgs) Handles BotaoAtualizarDados.Click
         atualizar.DesativarCampos()
         atualizar.LimparCamposAtualizacao()
+        atualizar.ListarCampos()
         atualizar.ShowDialog()
 
     End Sub
 
-    Public Function GetListaDePessoas()
-        Return ListaDePessoas
-    End Function
+
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles BotaoConsultar.Click
+
+        Consultar()
+
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles BotaoSalvar.Click
+        EstadoCivil()
+        Try
+            Dim Comando As String = $“INSERT INTO pessoa (nome, sobrenome, endereco, datadenascimento, sexo, estadocivil, email, telefone) VALUES ('{CampoNome.Text}', '{CampoSobrenome.Text}', '{CampoEndereco.Text}', '{CampoData.Text}', '{CampoSexo.SelectedItem}', '{estado}', '{CampoEmail.Text}', '{CampoTelefone.Text}');”
+            Dim BancoDeDados As New bancodedados()
+            BancoDeDados.Ordem(Comando)
+            BancoDeDados.Close()
+            MsgBox("Adicionado com Sucesso!")
+            Consultar()
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        End Try
+
+    End Sub
+
+
 End Class

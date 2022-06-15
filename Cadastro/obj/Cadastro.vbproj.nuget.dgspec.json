@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Admin\\source\\repos\\Cadastro\\Cadastro\\Cadastro.vbproj": {}
+    "C:\\Users\\Admin\\source\\repos\\vb.net-crud\\Cadastro\\Cadastro.vbproj": {}
   },
   "projects": {
-    "C:\\Users\\Admin\\source\\repos\\Cadastro\\Cadastro\\Cadastro.vbproj": {
+    "C:\\Users\\Admin\\source\\repos\\vb.net-crud\\Cadastro\\Cadastro.vbproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Admin\\source\\repos\\Cadastro\\Cadastro\\Cadastro.vbproj",
+        "projectUniqueName": "C:\\Users\\Admin\\source\\repos\\vb.net-crud\\Cadastro\\Cadastro.vbproj",
         "projectName": "Cadastro",
-        "projectPath": "C:\\Users\\Admin\\source\\repos\\Cadastro\\Cadastro\\Cadastro.vbproj",
+        "projectPath": "C:\\Users\\Admin\\source\\repos\\vb.net-crud\\Cadastro\\Cadastro.vbproj",
         "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Admin\\source\\repos\\Cadastro\\Cadastro\\obj\\",
+        "outputPath": "C:\\Users\\Admin\\source\\repos\\vb.net-crud\\Cadastro\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -39,6 +39,12 @@
       "frameworks": {
         "net6.0-windows7.0": {
           "targetAlias": "net6.0-windows",
+          "dependencies": {
+            "Npgsql": {
+              "target": "Package",
+              "version": "[6.0.4, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
